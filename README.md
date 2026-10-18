@@ -27,6 +27,10 @@ One More is a tiny Android app that counts your Reels and the time you spend on 
 
 > On Android 13 and newer, sideloaded apps can't use accessibility at first. Go to **App info → ⋮ → Allow restricted settings**, then try again.
 
+> **Blocked by Play Protect** ("This app can request access to sensitive data…")? In some countries Google blocks any app that uses accessibility when it's installed from a browser, chat app or file manager. One More uses accessibility only to see which reel is showing. To install it anyway, do one of these:
+> - From a computer: `adb install one-more-v1.2.apk`.
+> - On the phone: **Play Store → profile → Play Protect → ⚙ → turn off "Scan apps with Play Protect"**, install the APK, then turn scanning back on.
+
 ## How it works
 
 One More uses Android's accessibility service. It watches for Instagram's Reels viewer and reads which reel is showing from Instagram's scroll events. The bubble is an accessibility overlay, so the app doesn't need permission to draw over other apps.
