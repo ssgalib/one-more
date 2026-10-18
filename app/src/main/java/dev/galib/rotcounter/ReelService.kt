@@ -72,6 +72,7 @@ class ReelService : AccessibilityService() {
 
     private fun onTick() {
         if (day != Stats.today()) {
+            save() // flush the last seconds of the old day before the reset
             day = Stats.today()
             tracker.reset()
         }
