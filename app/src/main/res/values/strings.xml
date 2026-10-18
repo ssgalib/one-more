@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">One More</string>
+    <string name="service_description">Counts the Instagram Reels you watch today and the time spent, and shows it in a small bubble. It only looks at what\'s on screen inside Instagram, and nothing leaves your phone.</string>
+</resources>
