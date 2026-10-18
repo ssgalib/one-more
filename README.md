@@ -19,14 +19,8 @@ One More is a tiny Android app that counts your Reels and the time you spend on 
 
 ## Install
 
-You need an Android phone (8.0 or newer) and a computer with the Android SDK and JDK 17.
-
-```sh
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
-Then open **One More**, tap **Accessibility settings**, and turn on One More.
+1. Download `one-more-v1.0.apk` from the [latest release](https://github.com/ssgalib/one-more/releases/latest) and open it on an Android phone (8.0 or newer).
+2. Open **One More**, tap **Accessibility settings**, and turn on One More.
 
 > On Android 13 and newer, sideloaded apps can't use accessibility at first. Go to **App info → ⋮ → Allow restricted settings**, then try again.
 
@@ -42,9 +36,12 @@ One More uses Android's accessibility service. It watches for Instagram's Reels 
 - **Returning to Instagram counts the current reel again.** The app tracks reels by their position in the feed, and that restarts each time you open Reels.
 - It's Android only. iOS doesn't let apps see or draw over other apps.
 
-## Development
+## Build from source
+
+You need the Android SDK and JDK 17.
 
 ```sh
+./gradlew assembleDebug   # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew test     # unit tests for the counting rules
 adb logcat -s OneMore   # debug builds log scroll events and each count
 ```
