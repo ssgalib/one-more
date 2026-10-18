@@ -9,7 +9,7 @@ One More is a tiny Android app that counts your Reels and the time you spend on 
 <p align="center">
   <img src="docs/bubble.png" width="280" alt="The bubble over a reel: 43 reels, 6 minutes, 14 ads">
   &nbsp;&nbsp;
-  <img src="docs/app.png" width="280" alt="The app screen: today's reel count, time in Reels, time per reel, and ads">
+  <img src="docs/app.png" width="280" alt="The Week tab: 274 reels in the last 7 days, a bar per day, daily average and worst day">
 </p>
 
 ## What it counts
@@ -17,11 +17,12 @@ One More is a tiny Android app that counts your Reels and the time you spend on 
 - **Reels:** a reel counts once it has been on screen for 2 seconds. Quick skips don't count, and scrolling back to a reel doesn't count it twice.
 - **Time:** only time spent in the Reels viewer counts. The clock stops when the screen is off.
 - **Ads:** sponsored reels get their own count and are left out of your reel count. Their time still counts, because you were still scrolling.
-- Everything resets at midnight.
+- **History:** every day is kept, so the app has **Today / Week / Month** tabs: totals, daily average, worst day, a bar per day (tap one to see that day), and how it compares with the period before. Week and month mean the last 7 and 30 days.
+- The bubble shows today, and starts again at zero at midnight.
 
 ## Install
 
-1. Download `one-more-v1.1.apk` from the [latest release](https://github.com/ssgalib/one-more/releases/latest) and open it on an Android phone (8.0 or newer).
+1. Download `one-more-v1.2.apk` from the [latest release](https://github.com/ssgalib/one-more/releases/latest) and open it on an Android phone (8.0 or newer).
 2. Open **One More**, tap **Accessibility settings**, and turn on One More.
 
 > On Android 13 and newer, sideloaded apps can't use accessibility at first. Go to **App info → ⋮ → Allow restricted settings**, then try again.

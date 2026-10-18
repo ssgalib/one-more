@@ -14,17 +14,34 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/** Direction A, "Editorial": warm paper, huge Archivo count, mono section labels, hairlines. */
+/** Direction A, "Editorial": warm paper, huge Archivo count, mono section labels, hairlines. Tabs: today, 7 days, 30 days. */
 class MainActivity : Activity() {
+    private enum class Period(val tab: String, val kicker: String, val length: Int, val vs: String) {
+        TODAY("TODAY", "01 / TODAY", 1, "yesterday"),
+        WEEK("WEEK", "02 / LAST 7 DAYS", 7, "the 7 days before"),
+        MONTH("MONTH", "03 / LAST 30 DAYS", 30, "the 30 days before"),
+    }
+
+    private var period = Period.TODAY
+    private val tabs = HashMap<Period, Pair<TextView, View>>()
     private lateinit var date: TextView
+    private lateinit var kicker: TextView
     private lateinit var count: TextView
+    private lateinit var delta: TextView
     private lateinit var time: TextView
-    private lateinit var perReel: TextView
+    private lateinit var secondLabel: TextView
+    private lateinit var second: TextView
+    private lateinit var chart: BarChart
+    private lateinit var chartBlock: LinearLayout
+    private lateinit var picked: TextView
     private lateinit var ads: TextView
+    private lateinit var worstRow: LinearLayout
+    private lateinit var worst: TextView
     private lateinit var dot: View
     private lateinit var status: TextView
     private val dp by lazy { resources.displayMetrics.density }
@@ -60,10 +77,29 @@ class MainActivity : Activity() {
         })
         root.addView(hairline(), lp(top = 12, height = 1))
 
-        root.addView(mono("01 / TODAY", muted), lp(top = 40))
+        root.addView(LinearLayout(this).apply {
+            for (p in Period.entries) {
+                val label = mono(p.tab, muted).apply { gravity = Gravity.CENTER; textSize = 12f }
+                val underline = View(context)
+                addView(LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = "${p.tab.lowercase()} tab"
+                    setOnClickListener { period = p; render() }
+                    addView(label, LinearLayout.LayoutParams(MATCH_PARENT, px(42)).apply { gravity = Gravity.CENTER })
+                    addView(underline, LinearLayout.LayoutParams(MATCH_PARENT, px(2)))
+                }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+                tabs[p] = label to underline
+            }
+        })
+        root.addView(hairline(), lp(height = 1))
+
+        kicker = mono("", muted)
+        root.addView(kicker, lp(top = 28))
         count = TextView(this).apply {
             typeface = Fonts.archivo(context, 800)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 132f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 108f)
             letterSpacing = -0.04f
             includeFontPadding = false
             setTextColor(ink)
@@ -74,30 +110,50 @@ class MainActivity : Activity() {
             addView(TextView(context).apply {
                 text = "reels"
                 typeface = Fonts.serifItalic(context)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 34f)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 30f)
                 setTextColor(getColor(R.color.accent))
             }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = px(12) })
         }, lp(top = 4))
+        delta = mono("", ink).apply { textSize = 12f; letterSpacing = 0.04f }
+        root.addView(delta, lp(top = 10))
 
         time = stat()
-        perReel = stat()
-        root.addView(hairline(), lp(top = 32, height = 1))
+        second = stat()
+        secondLabel = mono("", muted)
+        root.addView(hairline(), lp(top = 22, height = 1))
         root.addView(LinearLayout(this).apply {
-            addView(cell("02 / IN REELS", time, start = 0, end = 16), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            addView(cell(mono("IN REELS", muted), time, start = 0, end = 16), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
             addView(View(context).apply { setBackgroundColor(line) }, LinearLayout.LayoutParams(px(1), MATCH_PARENT))
-            addView(cell("03 / PER REEL", perReel, start = 16, end = 0), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+            addView(cell(secondLabel, second, start = 16, end = 0), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
         })
         root.addView(hairline(), lp(height = 1))
 
-        ads = mono("", ink)
-        root.addView(LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            addView(mono("04 / ADS SKIPPED · TIME KEPT", muted), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-            addView(ads)
-        }, lp(top = 14))
-        root.addView(hairline(), lp(top = 14, height = 1))
+        chart = BarChart(this)
+        picked = mono("", muted)
+        chartBlock = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(chart, lp())
+            addView(picked, lp(top = 6))
+        }
+        chart.onSelect = { d ->
+            picked.setTextColor(ink)
+            picked.text = "${d.date.format(DateTimeFormatter.ofPattern("EEE d MMM")).uppercase()} · ${d.reels} REELS · " +
+                "${Stats.minutes(d.ms).uppercase()} · ${d.ads} ADS"
+        }
+        root.addView(chartBlock, lp(top = 20))
 
-        root.addView(View(this), LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f)) // push setup to the bottom
+        ads = mono("", ink)
+        root.addView(row(mono("ADS SKIPPED · TIME KEPT", muted), ads), lp(top = 4))
+        root.addView(hairline(), lp(height = 1))
+        worst = mono("", ink)
+        worstRow = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(row(mono("WORST DAY", muted), worst))
+            addView(hairline(), lp(height = 1))
+        }
+        root.addView(worstRow, lp())
+
+        root.addView(View(this), LinearLayout.LayoutParams(MATCH_PARENT, px(24), 1f)) // push setup to the bottom
 
         dot = View(this)
         status = mono("", ink)
@@ -127,18 +183,17 @@ class MainActivity : Activity() {
             label("→", Gravity.END).let { (v, p) -> addView(v, p) }
             setPadding(px(18), 0, px(18), 0)
         }, lp(top = 16, height = 52))
-        setContentView(root)
+        // scrolls on short screens; fillViewport keeps setup pinned to the bottom on tall ones
+        setContentView(ScrollView(this).apply {
+            isFillViewport = true
+            setBackgroundColor(bg)
+            addView(root)
+        })
     }
 
     override fun onResume() {
         super.onResume()
-        val t = Stats.load(this)
-        date.text = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM")).uppercase()
-        count.text = t.count.toString()
-        time.text = Stats.minutes(t.reelMs)
-        val items = t.count + t.ads
-        perReel.text = if (items == 0) "–" else "${t.reelMs / 1000 / items}s"
-        ads.text = t.ads.toString()
+        render()
         val on = isServiceOn()
         status.text = if (on) "TRACKING" else "TRACKER OFF"
         dot.background = GradientDrawable().apply {
@@ -147,10 +202,47 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun render() {
+        val today = LocalDate.now()
+        Stats.load(this) // moves v1.0/1.1's single day into history
+        val s = History.summary(Stats.all(this), today, period.length)
+        date.text = today.format(DateTimeFormatter.ofPattern("EEE d MMM")).uppercase()
+        for ((p, v) in tabs) {
+            v.first.setTextColor(if (p == period) ink else muted)
+            v.second.setBackgroundColor(if (p == period) ink else 0)
+            v.first.parent.let { (it as View).isSelected = p == period }
+        }
+        kicker.text = period.kicker
+        count.text = "%,d".format(s.reels)
+        delta.text = when (val d = s.deltaPct) {
+            null -> "NOTHING TO COMPARE WITH YET"
+            0 -> "= same as ${period.vs} (${"%,d".format(s.previousReels)})"
+            else -> "${if (d < 0) "↓" else "↑"} ${kotlin.math.abs(d)}% vs ${period.vs} (${"%,d".format(s.previousReels)})"
+        }
+        time.text = Stats.minutes(s.ms)
+        ads.text = "%,d".format(s.ads)
+        val isToday = period == Period.TODAY
+        if (isToday) {
+            secondLabel.text = "PER REEL"
+            val items = s.reels + s.ads
+            second.text = if (items == 0) "–" else "${s.ms / 1000 / items}s"
+        } else {
+            secondLabel.text = "DAILY AVG"
+            second.text = s.dailyAvg?.toString() ?: "–"
+            chart.set(s.days, s.dailyAvg, s.worst?.date)
+            picked.setTextColor(muted)
+            picked.text = "TAP A BAR TO SEE THAT DAY"
+            worst.text = s.worst?.let { "${it.date.format(DateTimeFormatter.ofPattern("EEE d MMM")).uppercase()} · ${it.reels}" } ?: "–"
+        }
+        chartBlock.visibility = if (isToday) View.GONE else View.VISIBLE
+        worstRow.visibility = if (isToday) View.GONE else View.VISIBLE
+    }
+
     private fun isServiceOn(): Boolean {
-        val me = ComponentName(this, ReelService::class.java).flattenToString()
+        val me = ComponentName(this, ReelService::class.java)
         val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        return enabled.split(':').any { it.equals(me, ignoreCase = true) }
+        // entries may be stored short ("pkg/.Cls") or long ("pkg/pkg.Cls"); compare parsed names
+        return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
     }
 
     private fun mono(s: String, color: Int) = TextView(this).apply {
@@ -163,16 +255,23 @@ class MainActivity : Activity() {
 
     private fun stat() = TextView(this).apply {
         typeface = Fonts.archivo(context, 700)
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 40f)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 32f)
         letterSpacing = -0.02f
         setTextColor(ink)
     }
 
-    private fun cell(label: String, value: TextView, start: Int, end: Int) = LinearLayout(this).apply {
+    private fun cell(label: TextView, value: TextView, start: Int, end: Int) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(px(start), px(18), px(end), px(18))
-        addView(mono(label, muted))
-        addView(value, lp(top = 6))
+        setPadding(px(start), px(14), px(end), px(14))
+        addView(label)
+        addView(value, lp(top = 4))
+    }
+
+    private fun row(label: TextView, value: TextView) = LinearLayout(this).apply {
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(0, px(14), 0, px(14))
+        addView(label, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        addView(value)
     }
 
     private fun hairline() = View(this).apply { setBackgroundColor(line) }
