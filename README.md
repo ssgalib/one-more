@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="96" alt="One More icon: four tally marks crossed by a blue fifth">
+
 # One More
 
 **How many Instagram Reels did you actually watch today?**
@@ -19,7 +21,7 @@ One More is a tiny Android app that counts your Reels and the time you spend on 
 
 ## Install
 
-1. Download `one-more-v1.0.apk` from the [latest release](https://github.com/ssgalib/one-more/releases/latest) and open it on an Android phone (8.0 or newer).
+1. Download `one-more-v1.1.apk` from the [latest release](https://github.com/ssgalib/one-more/releases/latest) and open it on an Android phone (8.0 or newer).
 2. Open **One More**, tap **Accessibility settings**, and turn on One More.
 
 > On Android 13 and newer, sideloaded apps can't use accessibility at first. Go to **App info → ⋮ → Allow restricted settings**, then try again.
